@@ -1,4 +1,6 @@
-﻿<!DOCTYPE html>
+﻿@using SSOClient.Helpers
+
+<!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8" />
@@ -29,10 +31,24 @@
                 <a asp-area="" asp-controller="Home" asp-action="Index" class="navbar-brand">SSOClient</a>
             </div>
             <div class="navbar-collapse collapse">
-                <ul class="nav navbar-nav">
-                    <li><a asp-area="" asp-controller="Home" asp-action="Index">Home</a></li>
-                    <li><a asp-area="" asp-controller="Home" asp-action="About">About</a></li>
-                    <li><a asp-area="" asp-controller="Home" asp-action="Contact">Contact</a></li>
+                <ul class="nav navbar-nav pull-right">
+                    @if (UserSession.UserId != null)
+                    {
+                        <li class="dropdown user user-menu">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                                <img src='/images/img_defaultprofile.png' ;" class="user-image" alt="User Image">
+                                <span>@UserSession.UserName</span>
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li class="user-footer">
+                                    <div class="">
+                                        <button class="app-logout btn btn-block btn-success">Logout</button>
+                                        <form asp-controller="Account" asp-action="Logout" method="post" id="logoutForm" class="navbar-right"></form>
+                                    </div>
+                                </li>
+                            </ul>
+                        </li>
+                    }
                 </ul>
             </div>
         </div>
@@ -41,6 +57,15 @@
     <partial name="_CookieConsentPartial" />
 
     <div class="container body-content">
+        @if (!string.IsNullOrWhiteSpace(ViewBag.ErrorMessage))
+        {
+            <div class="row" style="margin-top:30px;">
+                <ul style="color:red">
+                    <li>@ViewBag.ErrorMessage</li>
+                </ul>
+            </div>
+        }
+
         @RenderBody()
         <hr />
         <footer>

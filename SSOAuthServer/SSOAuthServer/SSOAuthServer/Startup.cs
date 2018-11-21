@@ -7,6 +7,7 @@ using DA.DataAccesses;
 using DA.Models;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
@@ -15,6 +16,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
+using SSOAuthServer.Helpers;
 using SSOAuthServerHelpers;
 
 namespace SSOAuthServer
@@ -31,12 +33,16 @@ namespace SSOAuthServer
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+
             //get app config from database
-            ConfigDA da = new ConfigDA(AppConfig.AppDbConn);
+            ConfigDA configDA = new ConfigDA(AppConfig.AppDbConn);
+            var config = configDA.GetConfig<Config>(AppConfig.AppName);
 
-            var config = da.GetConfig<Config>(AppConfig.AppName);
+            SSOClientDA ssoClientDA = new SSOClientDA(AppConfig.AppDbConn);
+            var ssoClients = ssoClientDA.GetSSOClients();
 
-            AppConfig.PreSetConfigInMemory(config);
+            AppConfig.PreSetConfigInMemory(config, ssoClients);
 
             // Adds a default in-memory implementation of IDistributedCache.
             services.AddDistributedMemoryCache();
@@ -44,7 +50,13 @@ namespace SSOAuthServer
             services.AddRouting(options => options.LowercaseUrls = true);
 
             services.Configure<Models.PagingOptions>(Configuration.GetSection("DefaultPagingOptions"));
-            
+
+            services.AddSession(options =>
+            {
+                options.Cookie.Name = config.CookieName;
+                options.IdleTimeout = TimeSpan.FromSeconds(config.WebSessionIdleTimeout);
+            });
+
             services.AddMvc()
             .AddJsonOptions(opt =>
             {
@@ -58,6 +70,7 @@ namespace SSOAuthServer
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
+            app.UseSession();
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
@@ -67,7 +80,8 @@ namespace SSOAuthServer
             {
                 app.UseHsts();
             }
-            
+
+            UserSession.Service = app.ApplicationServices;
             AppConfig.Service = app.ApplicationServices;
 
             app.UseStaticFiles();
@@ -77,6 +91,12 @@ namespace SSOAuthServer
             });
             app.UseHttpsRedirection();
             app.UseMvc();
+            app.UseMvc(routes =>
+            {
+                routes.MapRoute(
+                    name: "default",
+                    template: "{controller=Account}/{action=Login}");
+            });
         }
     }
 }

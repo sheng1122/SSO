@@ -8,6 +8,8 @@ using Microsoft.AspNetCore.HttpOverrides;
 using SSOClient.Helpers;
 using DA.DataAccesses;
 using DA.Models;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Http;
 
 namespace SSOClient
 {
@@ -22,7 +24,9 @@ namespace SSOClient
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
-        {            
+        {
+            services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+
             //set password validation
             services.Configure<IdentityOptions>(options =>
             {
@@ -35,12 +39,14 @@ namespace SSOClient
             });
 
             //get app config from database
-            ConfigDA da = new ConfigDA(AppConfig.AppDbConn);
+            ConfigDA configDA = new ConfigDA(AppConfig.AppDbConn);
+            var config = configDA.GetConfig<Config>(AppConfig.AppName);
 
-            var config = da.GetConfig<Config>(AppConfig.AppName);
+            SSOProviderDA ssoProviderDA = new SSOProviderDA(AppConfig.AppDbConn);
+            var ssoProviders = ssoProviderDA.GetSSOProviders();
 
-            AppConfig.PreSetConfigInMemory(config);
-            
+            AppConfig.PreSetConfigInMemory(config, ssoProviders);
+
             // Adds a default in-memory implementation of IDistributedCache.
             services.AddDistributedMemoryCache();
             
@@ -57,7 +63,7 @@ namespace SSOClient
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
             app.UseSession();
-            if (env.IsDevelopment() && false)
+            if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
                 app.UseDatabaseErrorPage();
@@ -79,12 +85,6 @@ namespace SSOClient
 
             app.UseMvc(routes =>
             {
-                routes.MapRoute(
-                   name: "register",
-                   template: "register",
-                   defaults: new { controller = "Account", action = "Register" }
-                );
-
                 routes.MapRoute(
                     name: "default",
                     template: "{controller=Home}/{action=Index}/{id?}");

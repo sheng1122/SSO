@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using SSOClient.Helpers;
 using SSOClient.Models;
 
 namespace SSOClient.Controllers
@@ -12,6 +10,11 @@ namespace SSOClient.Controllers
     {
         public IActionResult Index()
         {
+            if (UserSession.UserId == null || (UserSession.TokenExpiredDate != null && DateTime.UtcNow > UserSession.TokenExpiredDate))
+            {
+                UserSession.Clear();
+                return RedirectToAction(nameof(AccountController.Login), "Account");
+            }
             return View();
         }
 

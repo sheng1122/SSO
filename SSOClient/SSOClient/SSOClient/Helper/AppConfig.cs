@@ -4,6 +4,7 @@ using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Configuration;
 using SSOClient.Extensions;
 using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace SSOClient.Helpers
@@ -71,17 +72,19 @@ namespace SSOClient.Helpers
         #endregion
 
         #region config from db to cache
-
         private static Config _preMemoryConfig { get; set; }
+        private static List<SSOProvider> _preMemorySSOProviders { get; set; }
 
-        public static void PreSetConfigInMemory(Config config)
+        public static void PreSetConfigInMemory(Config config, List<SSOProvider> ssoProviders)
         {
             _preMemoryConfig = config;
+            _preMemorySSOProviders = ssoProviders;
         }
 
         private class Key
         {
             public const string DBConfig = "DBConfig";
+            public const string DBSSOProviders = "DBSSOProviders";
         }
 
         public static Config DBConfig
@@ -101,13 +104,32 @@ namespace SSOClient.Helpers
             }
         }
 
+        public static List<SSOProvider> DBSSOProviders
+        {
+            get
+            {
+                if (_preMemorySSOProviders != null)
+                {
+                    _cache.Set(Key.DBSSOProviders, _preMemorySSOProviders);
+
+                    _preMemorySSOProviders = null;
+                }
+
+                List<SSOProvider> ssoProviders = _cache.Get<List<SSOProvider>>(Key.DBSSOProviders);
+
+                return ssoProviders;
+            }
+        }
+
         public static void RefreshConfig()
         {
             ConfigDA da = new ConfigDA(AppConfig.AppDbConn);
-
             Config config = da.GetConfig<Config>(AppName);
 
-            PreSetConfigInMemory(config);
+            SSOProviderDA ssoProviderDA = new SSOProviderDA(AppConfig.AppDbConn);
+            var ssoProviders = ssoProviderDA.GetSSOProviders();
+
+            PreSetConfigInMemory(config, ssoProviders);
         }
 
         #endregion

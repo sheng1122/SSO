@@ -4,6 +4,7 @@ using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Configuration;
 using SSOAuthServer.Extensions;
 using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace SSOAuthServerHelpers
@@ -71,17 +72,19 @@ namespace SSOAuthServerHelpers
         #endregion
 
         #region config from db to cache
-
         private static Config _preMemoryConfig { get; set; }
+        private static List<SSOClient> _preMemorySSOClients { get; set; }
 
-        public static void PreSetConfigInMemory(Config config)
+        public static void PreSetConfigInMemory(Config config, List<SSOClient> ssoClients)
         {
             _preMemoryConfig = config;
+            _preMemorySSOClients = ssoClients;
         }
 
         private class Key
         {
             public const string DBConfig = "DBConfig";
+            public const string DBSSOClients = "DBSSOClients";
         }
 
         public static Config DBConfig
@@ -101,13 +104,32 @@ namespace SSOAuthServerHelpers
             }
         }
 
+        public static List<SSOClient> DBSSOClients
+        {
+            get
+            {
+                if (_preMemorySSOClients != null)
+                {
+                    _cache.Set(Key.DBSSOClients, _preMemorySSOClients);
+
+                    _preMemorySSOClients = null;
+                }
+
+                List<SSOClient> ssoClients = _cache.Get<List<SSOClient>>(Key.DBSSOClients);
+
+                return ssoClients;
+            }
+        }
+
         public static void RefreshConfig()
         {
             ConfigDA da = new ConfigDA(AppConfig.AppDbConn);
-
             Config config = da.GetConfig<Config>(AppName);
 
-            PreSetConfigInMemory(config);
+            SSOClientDA ssoClientDA = new SSOClientDA(AppConfig.AppDbConn);
+            var ssoClients = ssoClientDA.GetSSOClients();
+
+            PreSetConfigInMemory(config, ssoClients);
         }
 
         #endregion

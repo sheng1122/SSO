@@ -13,6 +13,8 @@ namespace SSOClient.Helpers
             public const string UserName = "UserName";
             public const string Email = "Email";
             public const string UserId = "UserId";
+            public const string SessionToken = "SessionToken";
+            public const string TokenExpiredDate = "TokenExpiredDate";
         }
 
         public static IServiceProvider Service
@@ -45,7 +47,6 @@ namespace SSOClient.Helpers
         {
             get
             {
-
                 string name = session.Get<string>(Key.UserName);
 
                 return name;
@@ -61,7 +62,6 @@ namespace SSOClient.Helpers
         {
             get
             {
-
                 string email = session.Get<string>(Key.Email);
 
                 return email;
@@ -73,12 +73,11 @@ namespace SSOClient.Helpers
             }
         }
 
-        public static Guid? UserId
+        public static int? UserId
         {
             get
             {
-
-                Guid? userId = session.Get<Guid?>(Key.UserId);
+                int? userId = session.Get<int?>(Key.UserId);
 
                 return userId;
             }
@@ -89,11 +88,43 @@ namespace SSOClient.Helpers
             }
         }
 
-        public static async Task Set(Guid userId, string email, string userName)
+        public static Guid? SessionToken
+        {
+            get
+            {
+                Guid? sessionToken = session.Get<Guid?>(Key.SessionToken);
+
+                return sessionToken;
+            }
+
+            private set
+            {
+                session.Set(Key.SessionToken, value);
+            }
+        }
+
+        public static DateTime? TokenExpiredDate
+        {
+            get
+            {
+                DateTime? tokenExpiredDate = session.Get<DateTime?>(Key.TokenExpiredDate);
+
+                return tokenExpiredDate;
+            }
+
+            private set
+            {
+                session.Set(Key.TokenExpiredDate, value);
+            }
+        }
+
+        public static async Task Set(int userId, string email, string userName, Guid sessionToken, DateTime tokenExpiredDate)
         {
             Email = email;
             UserName = userName;
             UserId = userId;
+            SessionToken = sessionToken;
+            TokenExpiredDate = tokenExpiredDate;
         }
 
         public static void Clear()
@@ -101,6 +132,8 @@ namespace SSOClient.Helpers
             Email = null;
             UserName = null;
             UserId = null;
+            SessionToken = null;
+            TokenExpiredDate = null;
         }
     }
 }

@@ -25,5 +25,11 @@ namespace DA.Models
         public string SmtpServerAddress { get; set; }
 
         public int SmtpServerPort { get; set; }
+
+        public string ReturnUrlFormat { get; set; } = "{clientReturnUrl}?authToken={authToken}";
+
+        public int UserAccessTokenAvailabilityHours { get; set; } = 150;
+
+        public int ClientAuthTokenAvailabilityMinute { get; set; } = 10;
     }
 }

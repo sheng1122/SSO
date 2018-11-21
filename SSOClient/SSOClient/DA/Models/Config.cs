@@ -25,5 +25,9 @@ namespace DA.Models
         public string SmtpServerAddress { get; set; }
 
         public int SmtpServerPort { get; set; }
+
+        public string SSOReturnUrl { get; set; } = "https://localhost:44344/Account/ExternalLogin_Test";
+
+        public int UserAccessTokenAvailabilityHours { get; set; } = 150;
     }
 }
