@@ -1,0 +1,328 @@
+-- --------------------------------------------------------
+-- Host:                         127.0.0.1
+-- Server version:               8.0.12 - MySQL Community Server - GPL
+-- Server OS:                    Win64
+-- HeidiSQL Version:             9.5.0.5196
+-- --------------------------------------------------------
+
+
+-- Dumping database structure for ssoclient
+CREATE DATABASE IF NOT EXISTS `ssoclient` ;
+USE `ssoclient`;
+
+-- Dumping structure for table ssoclient.audit
+CREATE TABLE IF NOT EXISTS `audit` (
+  `audit_id` char(36) NOT NULL,
+  `app_name` varchar(255) NOT NULL,
+  `service_name` varchar(255) DEFAULT NULL,
+  `operation_name` varchar(255) DEFAULT NULL,
+  `request_content` longtext,
+  `response_content` longtext,
+  `http_method` varchar(4) DEFAULT NULL,
+  `remote_address` varchar(2083) DEFAULT NULL,
+  `client_address` varchar(2083) DEFAULT NULL,
+  `client_port` varchar(60) DEFAULT NULL,
+  `request_date_time` datetime(3) DEFAULT NULL,
+  `response_date_time` datetime(3) DEFAULT NULL,
+  `created_utc_date` datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  `created_by` char(36) NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',
+  `status_code` int(11) DEFAULT NULL,
+  PRIMARY KEY (`audit_id`),
+  KEY `Created_Utc_Date` (`created_utc_date`),
+  KEY `App_Name` (`app_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- Dumping structure for table ssoclient.config
+CREATE TABLE IF NOT EXISTS `config` (
+  `config_id` char(36) NOT NULL,
+  `app` varchar(255) NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `value` varchar(255) NOT NULL,
+  `created_utc_date` datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  `modified_utc_date` datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  `created_by` char(36) NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',
+  `modified_by` char(36) NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',
+  `active` tinyint(1) NOT NULL DEFAULT '1',
+  PRIMARY KEY (`config_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- Dumping structure for table ssoclient.sso_provider
+CREATE TABLE IF NOT EXISTS `sso_provider` (
+  `sso_provider_id` int(11) NOT NULL AUTO_INCREMENT,
+  `provider_name` longtext NOT NULL,
+  `client_id` char(180) NOT NULL,
+  `client_secret` char(180) NOT NULL,
+  `redirect_url` longtext NOT NULL,
+  `validate_auth_token_url` longtext NOT NULL,
+  `created_utc_date` datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  `modified_utc_date` datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  `created_by` char(36) NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',
+  `modified_by` char(36) NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',
+  `active` tinyint(1) NOT NULL DEFAULT '1',
+  PRIMARY KEY (`sso_provider_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
+
+-- Dumping structure for table ssoclient.user
+CREATE TABLE IF NOT EXISTS `user` (
+  `user_id` int(11) NOT NULL AUTO_INCREMENT,
+  `first_name` longtext NOT NULL,
+  `last_name` longtext NOT NULL,
+  `email` varchar(180) NOT NULL,
+  `hash_password` longtext NOT NULL,
+  `created_utc_date` datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  `modified_utc_date` datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  `created_by` char(36) NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',
+  `modified_by` char(36) NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',
+  `active` tinyint(1) NOT NULL DEFAULT '1',
+  PRIMARY KEY (`user_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+
+-- Dumping structure for table ssoclient.user_session_token
+CREATE TABLE IF NOT EXISTS `user_session_token` (
+  `user_session_token_id` int(11) NOT NULL AUTO_INCREMENT,
+  `token` char(36) NOT NULL,
+  `sso_provider_name` longtext NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `expired_utc_date` datetime(3) NOT NULL,
+  `created_utc_date` datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  `modified_utc_date` datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  `created_by` char(36) NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',
+  `modified_by` char(36) NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',
+  `active` tinyint(1) NOT NULL DEFAULT '1',
+  PRIMARY KEY (`user_session_token_id`),
+  UNIQUE KEY `token_UNIQUE` (`token`)
+) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8;
+
+
+
+-- Dumping structure for procedure ssoclient.usp_create_audit
+DELIMITER //
+CREATE DEFINER=`root`@`localhost` PROCEDURE `usp_create_audit`(
+	IN AppName VARCHAR(255),
+	IN ServiceName VARCHAR(255),
+	IN OperationName VARCHAR(255),
+	IN RequestContent LONGTEXT,
+	IN ResponseContent LONGTEXT,
+	IN RemoteAddress VARCHAR(2083),
+	IN HttpMethod VARCHAR(4),
+	IN ClientAddress VARCHAR(2083),
+	IN ClientPort INT,
+	IN RequestDateTime DATETIME(3),
+	IN ResponseDateTime  DATETIME(3),
+	IN StatusCode INT
+)
+BEGIN
+	INSERT INTO `audit`
+		(App_Name,
+		Service_Name,
+		Operation_Name,
+		Request_Content,
+		Response_Content,
+		Remote_Address,
+		Http_Method,
+		Client_Address,
+		Client_Port,
+		Request_Date_Time,
+		Response_Date_Time,
+		Status_Code)
+	VALUES 
+		(AppName,
+        ServiceName ,
+		OperationName ,
+		RequestContent ,
+		ResponseContent ,
+		RemoteAddress ,
+		HttpMethod,
+		ClientAddress ,
+		ClientPort ,
+		RequestDateTime ,
+		ResponseDateTime ,
+		StatusCode);
+END//
+DELIMITER ;
+
+-- Dumping structure for procedure ssoclient.usp_create_ssoprovider
+DELIMITER //
+CREATE DEFINER=`root`@`localhost` PROCEDURE `usp_create_ssoprovider`(
+	IN ProviderName LONGTEXT,
+	IN ClientId char(36),
+	IN ClientSecret char(36),
+	IN RedirectUrl LONGTEXT,
+	IN ValidateAuthTokenUrl LONGTEXT
+)
+BEGIN
+	INSERT INTO `sso_provider`
+		(provider_name,
+	     client_id,
+	     client_secret,
+	     redirect_url,
+  	     validate_auth_token_url)
+	VALUES 
+		(ProviderName,
+	    ClientId,
+	    ClientSecret,
+	    RedirectUrl,
+	    ValidateAuthTokenUrl);
+        
+	SELECT *
+    FROM `sso_provider`
+    WHERE `sso_provider`.`sso_provider_id` = LAST_INSERT_ID();
+END//
+DELIMITER ;
+
+-- Dumping structure for procedure ssoclient.usp_create_user
+DELIMITER //
+CREATE DEFINER=`root`@`localhost` PROCEDURE `usp_create_user`(
+	IN FirstName LONGTEXT,
+	IN LastName LONGTEXT,
+	IN Email VARCHAR(180),
+	IN HashPassword LONGTEXT
+)
+BEGIN
+	INSERT INTO `user`
+		(first_name,
+	     last_name,
+	     email,
+  	     hash_password)
+	VALUES 
+		(FirstName,
+	    LastName,
+	    Email,
+	    HashPassword);
+        
+	SELECT *
+    FROM `user`
+    WHERE `user`.`user_id` = LAST_INSERT_ID();
+END//
+DELIMITER ;
+
+-- Dumping structure for procedure ssoclient.usp_create_usersessiontoken
+DELIMITER //
+CREATE DEFINER=`root`@`localhost` PROCEDURE `usp_create_usersessiontoken`(
+	IN `Token` char(36),
+	IN `SSOProviderName` longtext,
+	IN `UserId` INT(11),
+	IN `ExpiredUtcDate` DATETIME(3)
+)
+BEGIN
+	INSERT INTO `user_session_token`
+		(token,
+	     sso_provider_name,
+	     user_id,
+  	     expired_utc_date)
+	VALUES 
+		(Token,
+	    SSOProviderName,
+	    UserId,
+	    ExpiredUtcDate);      
+        
+	SELECT *
+    FROM `user_session_token`
+    WHERE `user_session_token`.`user_session_token_id` = LAST_INSERT_ID();
+END//
+DELIMITER ;
+
+-- Dumping structure for procedure ssoclient.usp_get_config
+DELIMITER //
+CREATE DEFINER=`root`@`localhost` PROCEDURE `usp_get_config`(IN appName VARCHAR(255))
+BEGIN
+	SELECT 
+		name,
+        value
+	FROM config
+    WHERE active = 1
+    AND app = appName;
+END//
+DELIMITER ;
+
+-- Dumping structure for procedure ssoclient.usp_get_ssoprovider
+DELIMITER //
+CREATE DEFINER=`root`@`localhost` PROCEDURE `usp_get_ssoprovider`()
+BEGIN
+	SELECT 
+		*
+	FROM `sso_provider`
+    WHERE `sso_provider`.`active` = 1;
+END//
+DELIMITER ;
+
+-- Dumping structure for procedure ssoclient.usp_get_user
+DELIMITER //
+CREATE DEFINER=`root`@`localhost` PROCEDURE `usp_get_user`(
+	IN Email VARCHAR(255))
+BEGIN
+	SELECT 
+		*
+	FROM `user`
+    WHERE `user`.`active` = 1
+    AND `user`.`email` = Email;
+END//
+DELIMITER ;
+
+
+
+-- Dumping structure for trigger ssoclient.tr_audit_bi
+DELIMITER //
+CREATE TRIGGER `tr_audit_bi` BEFORE INSERT ON `audit` FOR EACH ROW BEGIN
+		SET @id = UUID();
+		SET new.audit_id = @id;
+		
+		SET new.created_utc_date = utc_timestamp();
+	END//
+DELIMITER ;
+
+-- Dumping structure for trigger ssoclient.tr_config_bi
+DELIMITER //
+CREATE TRIGGER `tr_config_bi` BEFORE INSERT ON `config` FOR EACH ROW BEGIN
+		SET @id = UUID();
+		SET new.config_id = @id;
+		
+		SET new.created_utc_date = utc_timestamp();
+		SET new.modified_utc_date = utc_timestamp();
+	END//
+DELIMITER ;
+
+-- Dumping structure for trigger ssoclient.tr_ssoprovider_bi
+DELIMITER //
+CREATE TRIGGER `tr_ssoprovider_bi` BEFORE INSERT ON `sso_provider` FOR EACH ROW BEGIN
+		SET new.created_utc_date = utc_timestamp();
+		SET new.modified_utc_date = utc_timestamp();
+	END//
+DELIMITER ;
+
+-- Dumping structure for trigger ssoclient.tr_usersessiontoken_bi
+DELIMITER //
+CREATE TRIGGER `tr_usersessiontoken_bi` BEFORE INSERT ON `user_session_token` FOR EACH ROW BEGIN
+		SET new.created_utc_date = utc_timestamp();
+		SET new.modified_utc_date = utc_timestamp();
+	END//
+DELIMITER ;
+
+-- Dumping structure for trigger ssoclient.tr_user_bi
+DELIMITER //
+CREATE TRIGGER `tr_user_bi` BEFORE INSERT ON `user` FOR EACH ROW BEGIN
+		SET new.created_utc_date = utc_timestamp();
+		SET new.modified_utc_date = utc_timestamp();
+	END//
+DELIMITER ;
+
+
+
+-- Dumping data for table ssoclient.config: ~12 rows (approximately)
+INSERT INTO `config` (`app`, `name`, `value`, `created_by`, `modified_by`, `active`) VALUES
+	('SSOClient', 'SSOReturnUrl', 'https://localhost:44344/Account/ExternalLogin_Test', '00000000-0000-0000-0000-000000000000', '00000000-0000-0000-0000-000000000000', 1),
+	('SSOClient', 'SystemEmailAddress', 'ssoclient@gmail.com', '00000000-0000-0000-0000-000000000000', '00000000-0000-0000-0000-000000000000', 1),
+	('SSOClient', 'SystemEmailPassword', 'Abc123..', '00000000-0000-0000-0000-000000000000', '00000000-0000-0000-0000-000000000000', 1),
+	('SSOClient', 'ServiceTimeoutMilliseconds', '15000', '00000000-0000-0000-0000-000000000000', '00000000-0000-0000-0000-000000000000', 1),
+	('SSOClient', 'CookieName', 'SSOClient.Session', '00000000-0000-0000-0000-000000000000', '00000000-0000-0000-0000-000000000000', 1),
+	('SSOClient', 'DataRefreshSecondsTimer', '30', '00000000-0000-0000-0000-000000000000', '00000000-0000-0000-0000-000000000000', 1),
+	('SSOClient', 'DefaultPassword', 'Abc123.', '00000000-0000-0000-0000-000000000000', '00000000-0000-0000-0000-000000000000', 1),
+	('SSOClient', 'DirTemp', '_temp/', '00000000-0000-0000-0000-000000000000', '00000000-0000-0000-0000-000000000000', 1),
+	('SSOClient', 'WebSessionIdleTimeout', '1800', '00000000-0000-0000-0000-000000000000', '00000000-0000-0000-0000-000000000000', 1),
+	('SSOClient', 'SmtpServerAddress', 'smtp.gmail.com', '00000000-0000-0000-0000-000000000000', '00000000-0000-0000-0000-000000000000', 1),
+	('SSOClient', 'SmtpServerPort', '587', '00000000-0000-0000-0000-000000000000', '00000000-0000-0000-0000-000000000000', 1),
+	('SSOClient', 'UserAccessTokenAvailabilityHours', '150', '00000000-0000-0000-0000-000000000000', '00000000-0000-0000-0000-000000000000', 1);
+	
+-- Dumping data for table ssoclient.sso_provider: ~1 rows (approximately)
+INSERT INTO `sso_provider` (`sso_provider_id`, `provider_name`, `client_id`, `client_secret`, `redirect_url`, `validate_auth_token_url`, `created_utc_date`, `modified_utc_date`, `created_by`, `modified_by`, `active`) VALUES
+	(1, 'TEST-SSO-PROVIDER', '9c6e6953-847c-4ddb-b653-ce8e951e73f4', '7b49d307-60fd-447a-9457-fb726e99f43e', 'https://localhost:44325/Account/SSOLogin?returnUrl={returnUrl}&clientId={clientId}', 'https://localhost:44325/Api/Authorization/CheckAuth?authToken={authToken}&clientSecret={clientSecret}', '2018-11-19 22:09:35.035', '2018-11-19 22:09:35.035', '00000000-0000-0000-0000-000000000000', '00000000-0000-0000-0000-000000000000', 1);
